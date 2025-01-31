@@ -21,7 +21,7 @@
     "categories": {
         "anime": false,
         "basic": false,
-        "utility": false,
+        "utility": true,
         "moderation": false,
         "fun": false,
         "distube music": true,
