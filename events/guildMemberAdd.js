@@ -62,7 +62,6 @@ module.exports = async (client) => {
                 const serverIcon = member.guild.iconURL({ format: 'png', dynamic: true, size: 256 });
                 const randomImage = getRandomImage(data.welcomeImages);
                 
-               
                 const shortTitle = truncateUsername(`Welcome ${memberCount}${suffix}`, 15);
 
                 const welcomecard = new Wcard()
@@ -77,21 +76,21 @@ module.exports = async (client) => {
                 
                 const embed = new EmbedBuilder()
                     .setTitle("Welcome!")
-                    .setDescription(`${member}, You are the **${memberCount}${suffix}** member of our server!`)
+                    .setDescription(`${member}, Bạn là thành viên **${memberCount}${suffix}** của server!`)
                     .setColor("#00e5ff")
                     .setThumbnail(serverIcon)
                     .setImage('attachment://welcome.png')
                     .addFields(
-                        { name: 'Username', value: userName, inline: true },
-                        { name: 'Join Date', value: joinDate, inline: true },
-                        { name: 'Account Created', value: creationDate, inline: true }
+                        { name: 'Tên Người Dùng', value: userName, inline: true },
+                        { name: 'Ngày Tham Gia', value: joinDate, inline: true },
+                        { name: 'Tài Khoản Được Tạo', value: creationDate, inline: true }
                     )
-                    .setFooter({ text: "We're glad to have you here!", iconURL: serverIcon })
+                    .setFooter({ text: "Chúng tôi rất vui khi có bạn ở đây!", iconURL: serverIcon })
                     .setAuthor({ name: userName, iconURL: member.user.displayAvatarURL() })
                     .setTimestamp();
                 
                 welcomeChannel.send({
-                    content: `Hey ${member}!`,
+                    content: `Chào ${member}!`,
                     embeds: [embed],
                     files: [attachment]
                 });                
