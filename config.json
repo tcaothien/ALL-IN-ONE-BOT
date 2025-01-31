@@ -1,38 +1,38 @@
 {
     "token": "",
     "language": "en",
-    "prefix": "!",
-    "mongodbUri": "mongodb+srv://shiva:shiva@musicbotyt.ouljywv.mongodb.net/?retryWrites=true&w=majority",
+    "prefix": "e",
+    "mongodbUri": "mongodb+srv://tca:tca@enzlewy.obwxx.mongodb.net/?retryWrites=true&w=majority",
     "geniusToken": "0CHr9jtPjR7EKraXUVv6__8ELmEwFeUwt5vYAhk-is_fGOq-10-epdMzESkMPUnf",
     "excessCommands": {
-        "utility": true,
-        "other": true,
-        "hentai": true,
-        "lavalink": true,
-        "troll": true,
-        "levelling" : true,
-        "economy" : true,
-        "application" : true,
-        "birthday" : true,
-        "gaming" : true,
-        "customcommands" : true,
+        "utility": false,
+        "other": false,
+        "hentai": false,
+        "lavalink": false,
+        "troll": false,
+        "levelling" : false,
+        "economy" : false,
+        "application" : false,
+        "birthday" : false,
+        "gaming" : false,
+        "customcommands" : false,
         "report" : true
     },
     "categories": {
-        "anime": true,
-        "basic": true,
-        "utility": true,
-        "moderation": true,
-        "fun": true,
+        "anime": false,
+        "basic": false,
+        "utility": false,
+        "moderation": false,
+        "fun": false,
         "distube music": true,
         "setups": true
     },
      "lavalink": {
         "lavalink": {
-      "password": "prplmoe.me",
-      "host": "lavav4.prplmoe.me",
-      "port": 1118,
-      "secure": false
+      "host": "lava.inzeworld.com",
+            "port": 3128,
+            "password": "saher.inzeworld.com",
+            "secure": false
 
         }
     }, 
