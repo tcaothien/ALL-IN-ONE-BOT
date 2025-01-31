@@ -15,13 +15,12 @@ async function loadConfig() {
             return acc;
         }, {});
     } catch (err) {
-        //console.error('Error loading config from MongoDB:', err);
+        //console.error('Lỗi khi tải cấu hình từ MongoDB:', err);
         config.voiceChannelSetup = {}; 
     }
 }
 
 setInterval(loadConfig, 5000);
-
 
 setInterval(async () => {
     try {
@@ -42,7 +41,7 @@ setInterval(async () => {
             await voiceChannelCollection.deleteOne({ channelId: channel.channelId });
         }
     } catch (error) {
-        //console.error('Error during cleanup:', error);
+        //console.error('Lỗi khi dọn dẹp:', error);
     }
 }, 5000); 
 
@@ -61,7 +60,7 @@ const deleteChannelAfterTimeout = (client, channelId, timeout) => {
                 }
             }
         } catch (error) {
-            //console.error('Error deleting channel:', error);
+            //console.error('Lỗi khi xóa kênh:', error);
         }
     }, timeout);
 };
@@ -74,7 +73,7 @@ const sendOrUpdateCentralizedEmbed = async (client, guild) => {
     const managerChannel = guild.channels.cache.get(managerChannelId);
 
     if (!managerChannel) {
-        console.log(`Manager channel not found for guild: ${guild.id}`);
+        console.log(`Không tìm thấy kênh quản lý cho guild: ${guild.id}`);
         return;
     }
 
@@ -82,33 +81,30 @@ const sendOrUpdateCentralizedEmbed = async (client, guild) => {
         const existingControl = await centralizedControlCollection.findOne({ guildId: guild.id });
         const embed = new EmbedBuilder()
             .setAuthor({ 
-            name: "Voice Channel Manager", 
+            name: "Quản lý Kênh Voice", 
             iconURL: "https://cdn.discordapp.com/emojis/1092879273712435262.gif" ,
              url: "https://discord.gg/"
             })
-            .setDescription('- Click the buttons below to control your voice channel')
+            .setDescription('- Nhấn các nút bên dưới để điều khiển kênh voice của bạn')
             .setColor('#00FF00')
-            .addFields([
-                {
-                    name: 'Button Usage',
-                    value: `
-                        🔒 — Lock the voice channel  
-                        🔓 — Unlock the voice channel  
-                        👻 — Ghost the voice channel  
-                        ✨ — Reveal the voice channel  
-                        🚩 — Claim the voice channel  
-                        🚫 — Disconnect a members  
-                        🎮 — Start an activity  
-                        ℹ️ — View channel information  
-                        ➕ — Increase the user limit  
-                        ➖ — Decrease the user limit
+            .addFields([{
+                name: 'Cách sử dụng nút',
+                value: `
+                        🔒 — Khóa kênh voice  
+                        🔓 — Mở khóa kênh voice  
+                        👻 — Ghost kênh voice  
+                        ✨ — Hiển thị kênh voice  
+                        🚩 — Claim kênh voice  
+                        🚫 — Ngắt kết nối thành viên  
+                        🎮 — Bắt đầu hoạt động  
+                        ℹ️ — Xem thông tin kênh  
+                        ➕ — Tăng giới hạn người dùng  
+                        ➖ — Giảm giới hạn người dùng
                     `
-                }
-                
-            ])
+            }])
             .setTimestamp();
 
-            const row1 = new ActionRowBuilder()
+        const row1 = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder().setCustomId('voice_control_lock_channel').setEmoji('🔒').setStyle(ButtonStyle.Secondary), 
                 new ButtonBuilder().setCustomId('voice_control_unlock_channel').setEmoji('🔓').setStyle(ButtonStyle.Secondary),
@@ -130,12 +126,9 @@ const sendOrUpdateCentralizedEmbed = async (client, guild) => {
             try {
                 const message = await managerChannel.messages.fetch(existingControl.messageId);
 
-             
                 if (message.author.id === client.user.id) {
-                   
                     await message.edit({ embeds: [embed], components: [row1, row2] });
                 } else {
-                   
                     await message.delete();
                     const newMessage = await managerChannel.send({ embeds: [embed], components: [row1, row2] });
                     await centralizedControlCollection.updateOne(
@@ -145,7 +138,7 @@ const sendOrUpdateCentralizedEmbed = async (client, guild) => {
                 }
             } catch (fetchError) {
                 if (fetchError.code === 10008) { 
-                    console.error(`Message not found for guild ${guild.id}. Removing outdated record.`);
+                    console.error(`Không tìm thấy tin nhắn cho guild ${guild.id}. Xóa bản ghi cũ.`);
                     await centralizedControlCollection.deleteOne({ guildId: guild.id });
                     const newMessage = await managerChannel.send({ embeds: [embed], components: [row1, row2] });
                     await centralizedControlCollection.insertOne({
@@ -153,7 +146,7 @@ const sendOrUpdateCentralizedEmbed = async (client, guild) => {
                         messageId: newMessage.id,
                     });
                 } else {
-                    console.error(`Error fetching message for guild ${guild.id}:`, fetchError);
+                    console.error(`Lỗi khi fetch tin nhắn cho guild ${guild.id}:`, fetchError);
                 }
             }
         } else {
@@ -164,7 +157,7 @@ const sendOrUpdateCentralizedEmbed = async (client, guild) => {
             });
         }
     } catch (error) {
-        console.error(`Error handling centralized embed for guild: ${guild.id}`, error);
+        console.error(`Lỗi khi xử lý embed tập trung cho guild: ${guild.id}`, error);
     }
 };
 
@@ -185,16 +178,16 @@ const checkOutdatedCentralizedControls = async (client) => {
                 await managerChannel.messages.fetch(record.messageId);
             } catch (fetchError) {
                 if (fetchError.code === 10008) {
-                    console.error(`Message not found for guild ${record.guildId}. Removing outdated record.`);
+                    console.error(`Không tìm thấy tin nhắn cho guild ${record.guildId}. Xóa bản ghi cũ.`);
                     await centralizedControlCollection.deleteOne({ guildId: record.guildId });
                     continue;
                 } else {
-                    console.error(`Error fetching message for guild ${record.guildId}:`, fetchError);
+                    console.error(`Lỗi khi fetch tin nhắn cho guild ${record.guildId}:`, fetchError);
                 }
             }
         }
     } catch (error) {
-        console.error('Error checking outdated centralized controls:', error);
+        console.error('Lỗi khi kiểm tra các điều khiển tập trung cũ:', error);
     }
 };
 
@@ -203,27 +196,20 @@ const handleVoiceStateUpdate = async (client, oldState, newState) => {
     if (oldState.channelId && !newState.channelId) {
         const oldChannel = oldState.channel;
 
-  
         const voiceChannel = await voiceChannelCollection.findOne({ channelId: oldChannel.id, isTemporary: true });
 
         if (voiceChannel) {
-     
             if (oldChannel.members.size === 0) {
                 try {
-                  
                     await oldChannel.delete();
-                    //console.log(`Deleted empty voice channel: ${oldChannel.name}`);
-
-                    // Delete the channel record from the MongoDB collection
+                    //console.log(`Xóa kênh voice trống: ${oldChannel.name}`);
                     await voiceChannelCollection.deleteOne({ channelId: oldChannel.id });
-                    //console.log(`Deleted voice channel record from database: ${oldChannel.id}`);
                 } catch (error) {
-                    //console.error(`Error deleting channel or record for channel ${oldChannel.id}:`, error);
+                    //console.error(`Lỗi khi xóa kênh hoặc bản ghi kênh ${oldChannel.id}:`, error);
                 }
             }
         }
     }
-
 
     if (oldState.channelId === newState.channelId) return;
 
@@ -252,9 +238,7 @@ const handleVoiceStateUpdate = async (client, oldState, newState) => {
                 ]
             });
 
-         
             await member.voice.setChannel(newChannel);
-
            
             await voiceChannelCollection.insertOne({
                 id: newChannel.id,
@@ -265,23 +249,19 @@ const handleVoiceStateUpdate = async (client, oldState, newState) => {
                 isTemporary: true
             });
 
-
             deleteChannelAfterTimeout(client, newChannel.id, 6 * 60 * 60 * 1000);
         } catch (error) {
-            //console.error('Error creating voice channel:', error);
+            //console.error('Lỗi khi tạo kênh voice:', error);
         }
     }
 };
-
 
 const handleButtonInteraction = async (interaction) => {
 
     if (!interaction.isButton()) return;
 
-  
     const PREFIX = 'voice_control_';
 
- 
     if (!interaction.customId.startsWith(PREFIX)) return;
 
     const guild = interaction.guild;
@@ -290,116 +270,105 @@ const handleButtonInteraction = async (interaction) => {
     const currentVoiceChannel = member?.voice.channel;
 
     if (!currentVoiceChannel) {
-        return interaction.reply({ content: 'You must be in a voice channel to perform this action.', ephemeral: true });
+        return interaction.reply({ content: 'Bạn phải ở trong một kênh voice để thực hiện hành động này.', ephemeral: true });
     }
 
     const channelId = currentVoiceChannel.id;
     const voiceChannel = await voiceChannelCollection.findOne({ channelId });
 
     if (!voiceChannel) {
-        return interaction.reply({ content: 'This channel is not managed by the bot.', ephemeral: true });
+        return interaction.reply({ content: 'Kênh này không được bot quản lý.', ephemeral: true });
     }
 
     if (voiceChannel.userId !== userId) {
-        return interaction.reply({ content: 'You do not have permission to manage this channel.', ephemeral: true });
+        return interaction.reply({ content: 'Bạn không có quyền quản lý kênh này.', ephemeral: true });
     }
 
     try {
-      
         const action = interaction.customId.replace(PREFIX, '');
 
         switch (action) {
             case 'lock_channel':
-                await currentVoiceChannel.permissionOverwrites.set([
-                    {
-                        id: guild.roles.everyone,
-                        deny: [PermissionsBitField.Flags.Connect],
-                    },
-                ]);
-                await interaction.reply({ content: 'Your channel is now locked.', ephemeral: true });
+                await currentVoiceChannel.permissionOverwrites.set([{
+                    id: guild.roles.everyone,
+                    deny: [PermissionsBitField.Flags.Connect],
+                }]);
+                await interaction.reply({ content: 'Kênh của bạn đã bị khóa.', ephemeral: true });
                 break;
 
             case 'unlock_channel':
-                await currentVoiceChannel.permissionOverwrites.set([
-                    {
-                        id: guild.roles.everyone,
-                        allow: [PermissionsBitField.Flags.Connect],
-                    },
-                ]);
-                await interaction.reply({ content: 'Your channel is now unlocked.', ephemeral: true });
+                await currentVoiceChannel.permissionOverwrites.set([{
+                    id: guild.roles.everyone,
+                    allow: [PermissionsBitField.Flags.Connect],
+                }]);
+                await interaction.reply({ content: 'Kênh của bạn đã mở khóa.', ephemeral: true });
                 break;
 
             case 'ghost_channel':
-                await currentVoiceChannel.permissionOverwrites.set([
-                    {
-                        id: guild.roles.everyone,
-                        deny: [PermissionsBitField.Flags.ViewChannel],
-                    },
-                ]);
-                await interaction.reply({ content: 'Your channel is now ghosted.', ephemeral: true });
+                await currentVoiceChannel.permissionOverwrites.set([{
+                    id: guild.roles.everyone,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                }]);
+                await interaction.reply({ content: 'Kênh của bạn đã bị ghost.', ephemeral: true });
                 break;
 
             case 'reveal_channel':
-                await currentVoiceChannel.permissionOverwrites.set([
-                    {
-                        id: guild.roles.everyone,
-                        allow: [PermissionsBitField.Flags.ViewChannel],
-                    },
-                ]);
-                await interaction.reply({ content: 'Your channel is now revealed.', ephemeral: true });
+                await currentVoiceChannel.permissionOverwrites.set([{
+                    id: guild.roles.everyone,
+                    allow: [PermissionsBitField.Flags.ViewChannel],
+                }]);
+                await interaction.reply({ content: 'Kênh của bạn đã được hiển thị.', ephemeral: true });
                 break;
 
             case 'claim_channel':
-                await interaction.reply({ content: 'You have claimed this channel.', ephemeral: true });
+                await interaction.reply({ content: 'Bạn đã claim kênh này.', ephemeral: true });
                 break;
 
             case 'disconnect_member':
                 if (currentVoiceChannel.members.size > 1) {
                     const randomMember = currentVoiceChannel.members.random();
                     await randomMember.voice.disconnect();
-                    await interaction.reply({ content: `${randomMember.user.tag} has been disconnected.`, ephemeral: true });
+                    await interaction.reply({ content: `${randomMember.user.tag} đã bị ngắt kết nối.`, ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'No other members to disconnect.', ephemeral: true });
+                    await interaction.reply({ content: 'Không có thành viên nào để ngắt kết nối.', ephemeral: true });
                 }
                 break;
 
             case 'start_activity':
-                await interaction.reply({ content: 'Starting an activity is currently not supported.', ephemeral: true });
+                await interaction.reply({ content: 'Bắt đầu hoạt động hiện tại không được hỗ trợ.', ephemeral: true });
                 break;
 
             case 'view_channel_info':
-                const info = `Channel Name: ${currentVoiceChannel.name}\nChannel ID: ${currentVoiceChannel.id}`;
+                const info = `Tên kênh: ${currentVoiceChannel.name}\nID kênh: ${currentVoiceChannel.id}`;
                 await interaction.reply({ content: info, ephemeral: true });
                 break;
 
             case 'increase_limit':
                 if (currentVoiceChannel.userLimit < 99) {
                     await currentVoiceChannel.setUserLimit(currentVoiceChannel.userLimit + 1);
-                    await interaction.reply({ content: 'User limit increased.', ephemeral: true });
+                    await interaction.reply({ content: 'Đã tăng giới hạn người dùng.', ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'Maximum user limit reached.', ephemeral: true });
+                    await interaction.reply({ content: 'Đã đạt giới hạn người dùng tối đa.', ephemeral: true });
                 }
                 break;
 
             case 'decrease_limit':
                 if (currentVoiceChannel.userLimit > 0) {
                     await currentVoiceChannel.setUserLimit(currentVoiceChannel.userLimit - 1);
-                    await interaction.reply({ content: 'User limit decreased.', ephemeral: true });
+                    await interaction.reply({ content: 'Đã giảm giới hạn người dùng.', ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'Minimum user limit reached.', ephemeral: true });
+                    await interaction.reply({ content: 'Đã đạt giới hạn người dùng tối thiểu.', ephemeral: true });
                 }
                 break;
 
             default:
-                await interaction.reply({ content: 'Invalid button pressed.', ephemeral: true });
+                await interaction.reply({ content: 'Nút không hợp lệ được nhấn.', ephemeral: true });
         }
     } catch (error) {
-        console.error('Error handling button interaction:', error);
-        await interaction.reply({ content: 'An error occurred while processing your request.', ephemeral: true });
+        console.error('Lỗi khi xử lý tương tác nút:', error);
+        await interaction.reply({ content: 'Đã có lỗi xảy ra khi xử lý yêu cầu của bạn.', ephemeral: true });
     }
 };
-
-
 
 module.exports = (client) => {
     client.on('ready', async () => {
@@ -407,7 +376,7 @@ module.exports = (client) => {
             await loadConfig();
             client.guilds.cache.forEach(guild => sendOrUpdateCentralizedEmbed(client, guild));
         } catch (error) {
-            console.error('Error during ready event:', error);
+            console.error('Lỗi trong sự kiện ready:', error);
         }
     });
 
