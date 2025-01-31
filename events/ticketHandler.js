@@ -16,7 +16,7 @@ async function loadConfig() {
             return acc;
         }, {});
     } catch (err) {
-        //console.error('Error loading config from MongoDB:', err);
+        //console.error('Lỗi khi tải cấu hình từ MongoDB:', err);
     }
 }
 
@@ -54,29 +54,28 @@ async function monitorConfigChanges(client) {
                     const ticketChannel = guild.channels.cache.get(settings.ticketChannelId);
                     if (!ticketChannel) continue;
 
-          
                     const embed = new EmbedBuilder()
                         .setAuthor({
-                            name: "Welcome to Ticket Support",
+                            name: "Chào mừng đến với kênh Ticket ",
                             iconURL: ticketIcons.mainIcon,
-                            url: "https://discord.gg/xQF9f9yUEM"
+                            url: "https://discord.gg/enzlewy"
                         })
-                        .setDescription('- Please click below menu to create a new ticket.\n\n' +
-                            '**Ticket Guidelines:**\n' +
-                            '- Empty tickets are not permitted.\n' +
-                            '- Please be patient while waiting for a response from our support team.')
-                        .setFooter({ text: 'We are here to Help!', iconURL: ticketIcons.modIcon })
+                        .setDescription('- Vui lòng nhấn chọn menu bên dưới để tạo Ticket mới.\n\n' +
+                            '**Ticket Rules:**\n' +
+                            '- Không được phép tạo ticket khi không có mục đích gì.\n' +
+                            '- Vui lòng kiên nhẫn chờ đợi phản hồi từ support của server.')
+                        .setFooter({ text: 'Chúng mình ở đây để giúp đỡ các bạn!', iconURL: ticketIcons.modIcon })
                         .setColor('#00FF00')
                         .setTimestamp();
 
                     const menu = new StringSelectMenuBuilder()
                         .setCustomId('select_ticket_type')
-                        .setPlaceholder('Choose ticket type')
+                        .setPlaceholder('Chọn loại Ticket ')
                         .addOptions([
-                            { label: '🆘 Support', value: 'support' },
-                            { label: '📂 Suggestion', value: 'suggestion' },
-                            { label: '💜 Feedback', value: 'feedback' },
-                            { label: '⚠️ Report', value: 'report' }
+                            { label: '🆘 Hỗ trợ', value: 'support' },
+                            { label: '📂 Đề xuất cho server', value: 'suggestion' },
+                            { label: '💜 Phản hồi', value: 'feedback' },
+                            { label: '⚠️ Báo cáo', value: 'report' }
                         ]);
 
                     const row = new ActionRowBuilder().addComponents(menu);
@@ -94,7 +93,7 @@ async function monitorConfigChanges(client) {
 }
 
 async function handleSelectMenu(interaction, client) {
-    await interaction.deferReply({ ephemeral: true }); 
+    await interaction.deferReply({ ephemeral: true });
 
     const { guild, user, values } = interaction;
     if (!guild || !user) return;
@@ -107,7 +106,7 @@ async function handleSelectMenu(interaction, client) {
 
     const ticketExists = await ticketsCollection.findOne({ guildId, userId });
     if (ticketExists) {
-        return interaction.followUp({ content: 'You already have an open ticket.', ephemeral: true });
+        return interaction.followUp({ content: 'Bạn đã có một Ticket đang mở.', ephemeral: true });
     }
 
     const ticketChannel = await guild.channels.create({
@@ -134,18 +133,18 @@ async function handleSelectMenu(interaction, client) {
 
     const ticketEmbed = new EmbedBuilder()
         .setAuthor({
-            name: "Support Ticket",
+            name: "Ticket Hỗ trợ",
             iconURL: ticketIcons.modIcon,
-            url: "https://discord.gg/xQF9f9yUEM"
+            url: "https://discord.gg/enzlewy"
         })
-        .setDescription(`Hello ${user}, welcome to our support!\n- Please provide a detailed description of your issue\n- Our support team will assist you as soon as possible.\n- Feel free to open another ticket if this was closed.`)
-        .setFooter({ text: 'Your satisfaction is our priority', iconURL: ticketIcons.heartIcon })
+        .setDescription(`Hellooo ${user}, chào mừng đến với server của bọn mình!\n- Vui lòng cung cấp mô tả chi tiết về vấn đề của bạn\n- Đội ngũ support của chúng mình sẽ hỗ trợ bạn sớm nhất có thể.`)
+        .setFooter({ text: 'Rất mong bạn có 1 trải nghiệm siêu tốt ở server của bọn mìnhhhh', iconURL: ticketIcons.heartIcon })
         .setColor('#00FF00')
         .setTimestamp();
 
     const closeButton = new ButtonBuilder()
         .setCustomId(`close_ticket_${ticketId}`)
-        .setLabel('Close Ticket')
+        .setLabel('Đóng Ticket ')
         .setStyle(ButtonStyle.Danger);
 
     const actionRow = new ActionRowBuilder().addComponents(closeButton);
@@ -155,21 +154,21 @@ async function handleSelectMenu(interaction, client) {
     const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setAuthor({ 
-            name: "Ticket Created!", 
+            name: "Ticket đã được tạo!", 
             iconURL: ticketIcons.correctIcon,
-            url: "https://discord.gg/xQF9f9yUEM"
+            url: "https://discord.gg/enzlewy"
         })
-        .setDescription(`- Your ${ticketType} ticket has been created.`)
+        .setDescription(`- Ticket ${ticketType} của bạn đã được tạo.`)
         .addFields(
-            { name: 'Ticket Channel', value: `${ticketChannel.url}` },
-            { name: 'Instructions', value: 'Please describe your issue in detail.' }
+            { name: 'Kênh Ticket', value: `${ticketChannel.url}` },
+            { name: 'Hướng dẫn', value: 'Vui lòng mô tả vấn đề của bạn một cách chi tiết.' }
         )
         .setTimestamp()
-        .setFooter({ text: 'Thank you for reaching out!', iconURL: ticketIcons.modIcon });
+        .setFooter({ text: 'Cảm ơn bạn đã liên hệ!', iconURL: ticketIcons.modIcon });
 
-    await user.send({ content: `Your ${ticketType} ticket has been created`, embeds: [embed] });
+    await user.send({ content: `Ticket ${ticketType} của bạn đã được tạo`, embeds: [embed] });
 
-    interaction.followUp({ content: 'Ticket created!', ephemeral: true });
+    interaction.followUp({ content: 'Ticket đã được tạo!', ephemeral: true });
 }
 
 async function handleCloseButton(interaction, client) {
@@ -181,7 +180,7 @@ async function handleCloseButton(interaction, client) {
 
     const ticket = await ticketsCollection.findOne({ id: ticketId });
     if (!ticket) {
-        return interaction.followUp({ content: 'Ticket not found. Please report to staff!', ephemeral: true });
+        return interaction.followUp({ content: 'Không tìm thấy ticket. Vui lòng báo cáo cho support!', ephemeral: true });
     }
 
     const ticketChannel = guild.channels.cache.get(ticket.channelId);
@@ -198,16 +197,16 @@ async function handleCloseButton(interaction, client) {
         const embed = new EmbedBuilder()
             .setColor(0x0099ff)
             .setAuthor({ 
-                name: "Ticket closed!", 
+                name: "Ticket đã đóng!", 
                 iconURL: ticketIcons.correctrIcon,
-                url: "https://discord.gg/xQF9f9yUEM"
+                url: "https://discord.gg/enzlewy"
             })
-            .setDescription(`- Your ticket has been closed.`)
+            .setDescription(`- Ticket của bạn đã được đóng.`)
             .setTimestamp()
-            .setFooter({ text: 'Thank you for reaching out!', iconURL: ticketIcons.modIcon });
+            .setFooter({ text: 'Cảm ơn bạn đã liên hệ!', iconURL: ticketIcons.modIcon });
 
-        await ticketUser.send({ content: `Your ticket has been closed.`, embeds: [embed] });
+        await ticketUser.send({ content: `Ticket của bạn đã được đóng.`, embeds: [embed] });
     }
 
-    interaction.followUp({ content: 'Ticket closed and user notified.', ephemeral: true });
+    interaction.followUp({ content: 'Ticket đã đóng và người dùng đã được thông báo.', ephemeral: true });
 }
