@@ -5,22 +5,22 @@ module.exports = async function moderationLogsHandler(client) {
     client.on('guildMemberUpdate', async (oldMember, newMember) => {
         const guildId = newMember.guild.id;
 
-        // Fetch config
+        // Lấy cấu hình ghi log
         const config = await logsCollection.findOne({ guildId, eventType: 'moderationLogs' });
         if (!config || !config.channelId) return;
 
         const logChannel = newMember.guild.channels.cache.get(config.channelId);
 
-        // Check for timeout updates
+        // Kiểm tra nếu có thay đổi về thời gian tạm khóa (timeout)
         if (oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp) {
             const embed = new EmbedBuilder()
-                .setTitle('⏳ Timeout Updated')
+                .setTitle('⏳ Thay đổi thời gian tạm khóa')
                 .setColor('#FF9900')
                 .addFields(
-                    { name: 'User', value: `${newMember.user.tag} (${newMember.id})`, inline: true },
-                    { name: 'Timeout Until', value: newMember.communicationDisabledUntil
+                    { name: 'Thành viên', value: `${newMember.user.tag} (${newMember.id})`, inline: true },
+                    { name: 'Thời gian tạm khóa đến', value: newMember.communicationDisabledUntil
                         ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:F>`
-                        : '*None*', inline: true },
+                        : '*Không có*', inline: true },
                 )
                 .setTimestamp();
 
