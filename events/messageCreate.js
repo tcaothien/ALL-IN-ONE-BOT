@@ -20,7 +20,7 @@ module.exports = {
             await handleAFKRemoval(message);
             await handleMentions(message);
         } catch (afkError) {
-            console.error('AFK handler error:', afkError);
+            console.error('Lỗi xử lý AFK:', afkError);
         }
 
         
@@ -47,26 +47,26 @@ module.exports = {
             const logChannelId = await serverLevelingLogsCollection.findOne({ serverId: message.guild.id })
                 .then(config => config?.levelLogsChannelId);
 
-            const levelUpMessage = `${message.author}, you leveled up to **level ${level}!** 🎉`;
+            const levelUpMessage = `${message.author}, bạn đã lên **level ${level}!** 🎉`;
 
             
             const embed = new EmbedBuilder()
-                .setColor('#1E90FF') 
+                .setColor('FF0000') 
                 .setAuthor({
                     name: 'Level Up!',
                     iconURL: cmdIcons.rippleIcon,
-                    url: 'https://discord.gg/xQF9f9yUEM', 
+                    url: 'https://discord.gg/enzlewy', 
                 })
-                .setDescription(`🎉 **Congratulations, ${message.author}!**\nYou've reached **Level ${level}**!`)
+                .setDescription(`🎉 **Chúc mừng, ${message.author}!**\nBạn đã đạt được **Level ${level}**!`)
                 .setThumbnail(message.author.displayAvatarURL({ format: 'png', dynamic: true }))
                 .addFields(
-                    { name: '📊 Current Level', value: `**${level}**`, inline: true },
-                    { name: '💫 XP Gained This Week', value: `**${userData.weeklyXp || 0} XP**`, inline: true },
+                    { name: '📊 Level hiện tại', value: `**${level}**`, inline: true },
+                    { name: '💫 XP đạt được trong tuần', value: `**${userData.weeklyXp || 0} XP**`, inline: true },
                     { name: '\u200B', value: '\u200B' },
-                    { name: '📈 Total XP', value: `**${userData.xp || 0} XP**`, inline: true },
-                    { name: '✨ XP to Next Level', value: `**${Math.ceil(Math.pow((level + 1) / 0.1, 2) - xp)} XP**`, inline: true },
+                    { name: '📈 Tổng XP', value: `**${userData.xp || 0} XP**`, inline: true },
+                    { name: '✨ XP đến level tiếp theo', value: `**${Math.ceil(Math.pow((level + 1) / 0.1, 2) - xp)} XP**`, inline: true },
                 )
-                .setFooter({ text: 'Keep chatting to climb the leaderboard!', iconURL: cmdIcons.levelUpIcon })
+                .setFooter({ text: 'Hãy chat thêm điiii!', iconURL: cmdIcons.levelUpIcon })
                 .setTimestamp();
 
             if (logChannelId) {
@@ -85,7 +85,7 @@ module.exports = {
             const data = fs.readFileSync(configPath, 'utf8');
             config = JSON.parse(data);
         } catch (err) {
-            //console.error('Error reading or parsing config file:', err);
+            //console.error('Lỗi khi đọc hoặc phân tích tệp cấu hình:', err);
             return message.reply(lang.error);
         }
 
@@ -93,7 +93,7 @@ module.exports = {
         try {
             serverConfig = await serverConfigCollection.findOne({ serverId: message.guild.id });
         } catch (err) {
-            //console.error('Error fetching server configuration from MongoDB:', err);
+            //console.error('Lỗi khi lấy cấu hình máy chủ từ MongoDB:', err);
         }
 
        
@@ -112,8 +112,8 @@ module.exports = {
             try {
                 message.reply(customCommand.response);
             } catch (error) {
-                console.error('Error executing custom command:', error);
-                message.reply('There was an error trying to execute your custom command!');
+                console.error('Lỗi khi thực thi lệnh tùy chỉnh:', error);
+                message.reply('Đã có lỗi xảy ra khi thực thi lệnh tùy chỉnh của bạn!');
             }
             return; 
         }
@@ -132,9 +132,9 @@ module.exports = {
                 //console.error(error);
                 const errorEmbed = new EmbedBuilder()
                     .setColor('#ff0000')
-                    .setTitle('Command Error')
+                    .setTitle('Lỗi Lệnh')
                     .setDescription(lang.commandError.replace('{commandName}', commandName))
-                    .addFields({ name: 'Error Details:', value: error.message });
+                    .addFields({ name: 'Chi tiết lỗi:', value: error.message });
 
                 message.reply({ embeds: [errorEmbed] });
             }
@@ -144,9 +144,9 @@ module.exports = {
        
         if (!config.categories[category]) {
             try {
-                //await message.reply({ content: `The command in category \`${category}\` is disabled.` });
+                //await message.reply({ content: `Lệnh trong danh mục \`${category}\` đã bị vô hiệu hóa.` });
             } catch (replyError) {
-                //console.error('Error when sending command disabled reply:', replyError);
+                //console.error('Lỗi khi gửi phản hồi lệnh bị vô hiệu hóa:', replyError);
             }
             return;
         }
@@ -157,9 +157,9 @@ module.exports = {
             console.error(error);
             const errorEmbed = new EmbedBuilder()
                 .setColor('#ff0000')
-                .setTitle('Command Error')
+                .setTitle('Lỗi Lệnh')
                 .setDescription(lang.commandError.replace('{commandName}', commandName))
-                .addFields({ name: 'Error Details:', value: error.message });
+                .addFields({ name: 'Chi tiết lỗi:', value: error.message });
 
             message.reply({ embeds: [errorEmbed] });
         }
