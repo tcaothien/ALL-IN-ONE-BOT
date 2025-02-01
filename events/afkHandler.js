@@ -38,8 +38,8 @@ module.exports = (client) => {
       const user = client.users.cache.get(afk.userId);
       if (user) {
         const embed = new EmbedBuilder()
-          .setTitle('AFK Status Expired')
-          .setDescription(`Your AFK status has expired.\n**Reason:** ${afk.reason}`)
+          .setTitle('Trạng thái AFK đã hết hạn')
+          .setDescription(`Trạng thái AFK của bạn đã hết hạn.\n**Lý do:** ${afk.reason}`)
           .setColor(0xffcc00)
           .setTimestamp();
 
@@ -70,16 +70,16 @@ module.exports = (client) => {
       if (afk && !afkReplySent) {
         const embed = new EmbedBuilder()
           .setAuthor({ 
-            name: "AFK Notification", 
+            name: "Thông báo AFK", 
             iconURL: ticketIcons.correctIcon ,
-            url: "https://discord.gg/xQF9f9yUEM"
+            url: "https://discord.gg/enzlewy"
             })
-          .setDescription(`<@${userId}> is currently AFK.\n**Reason:** ${afk.reason}`)
+          .setDescription(`<@${userId}> hiện đang AFK.\n**Lý do:** ${afk.reason}`)
           .setColor(0x00bfff)
           .setTimestamp();
 
         if (afk.expiresAt) {
-          embed.addFields({ name: 'Duration', value: `<t:${Math.floor(afk.expiresAt.getTime() / 1000)}:R>` });
+          embed.addFields({ name: 'Thời gian', value: `<t:${Math.floor(afk.expiresAt.getTime() / 1000)}:R>` });
         }
 
         await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } }).catch(console.error);
@@ -88,12 +88,12 @@ module.exports = (client) => {
     }
 
    
-    setTimeout(() => processedMessages.delete(message.id), 30000); // Adjust delay as needed
+    setTimeout(() => processedMessages.delete(message.id), 30000); // Điều chỉnh độ trễ nếu cần
   }
 
 
   async function handleAFKRemoval(message) {
-    if (!message.guild || !message.author) return; // Ignore DMs and invalid messages
+    if (!message.guild || !message.author) return; // Bỏ qua tin nhắn từ DM và tin nhắn không hợp lệ
 
     const authorAFK = await getAFK(message.author.id, message.guild.id);
 
@@ -102,11 +102,11 @@ module.exports = (client) => {
 
       const embed = new EmbedBuilder()
         .setAuthor({ 
-        name: "AFK Notification", 
+        name: "Thông báo AFK", 
         iconURL: ticketIcons.correctIcon ,
-        url: "https://discord.gg/xQF9f9yUEM"
+        url: "https://discord.gg/enzlewy"
         })
-        .setDescription(`Welcome back, <@${message.author.id}>! Your AFK status has been removed.`)
+        .setDescription(`Chào mừng trở lại, <@${message.author.id}>! Trạng thái AFK của bạn đã được gỡ bỏ.`)
         .setColor(0x00ff7f)
         .setTimestamp();
 
@@ -114,11 +114,11 @@ module.exports = (client) => {
 
       const dmEmbed = new EmbedBuilder()
         .setAuthor({ 
-        name: "AFK Notification", 
+        name: "Thông báo AFK", 
         iconURL: ticketIcons.correctIcon ,
-        url: "https://discord.gg/xQF9f9yUEM"
+        url: "https://discord.gg/enzlewy"
         })
-        .setDescription('You are active again, so your AFK status has been removed.')
+        .setDescription('Bạn đã trở lại hoạt động, trạng thái AFK của bạn đã được gỡ bỏ.')
         .setColor(0x00ff7f)
         .setTimestamp();
 
@@ -131,24 +131,24 @@ module.exports = (client) => {
     setInterval(async () => {
       try {
         await removeExpiredAFKs();
-        //console.log('\x1b[36m[ AFK Handler ]\x1b[0m', 'Expired AFK statuses cleaned up.');
+        //console.log('\x1b[36m[ Xử lý AFK ]\x1b[0m', 'Đã dọn dẹp trạng thái AFK hết hạn.');
       } catch (error) {
-        console.error('Error cleaning up expired AFK statuses:', error);
+        console.error('Lỗi khi dọn dẹp trạng thái AFK hết hạn:', error);
       }
-    }, 60000); // Runs every 60 seconds
+    }, 60000); // Chạy mỗi 60 giây
   });
 
-  // Event handler for messages
+  // Xử lý sự kiện cho tin nhắn
     //   client.on('messageCreate', async (message) => {
     //     try {
     //       await handleAFKRemoval(message);
     //       await handleMentions(message);
     //     } catch (error) {
-    //       console.error('Error in AFK handler:', error);
+    //       console.error('Lỗi trong xử lý AFK:', error);
     //     }
     //   });
 
-  // Export functions
+  // Xuất các hàm
   return {
     setAFK,
     removeAFK,
