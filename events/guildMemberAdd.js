@@ -88,7 +88,6 @@ module.exports = async (client) => {
 <#1329022060428791848>`)
 
                     .setColor("FF0000")
-                    .setThumbnail(serverIcon)
                     .setImage('attachment://welcome.png')
                     .addFields(
                         { name: 'Thành viên', value: userName, inline: true },
