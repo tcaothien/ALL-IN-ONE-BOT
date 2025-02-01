@@ -5,18 +5,18 @@
     "mongodbUri": "mongodb+srv://tca:tca@enzlewy.obwxx.mongodb.net/?retryWrites=true&w=majority",
     "geniusToken": "0CHr9jtPjR7EKraXUVv6__8ELmEwFeUwt5vYAhk-is_fGOq-10-epdMzESkMPUnf",
     "excessCommands": {
-        "utility": false,
+        "utility": true,
         "other": false,
         "hentai": false,
         "lavalink": false,
         "troll": false,
-        "levelling" : false,
+        "levelling" : true,
         "economy" : false,
         "application" : false,
         "birthday" : false,
         "gaming" : false,
         "customcommands" : false,
-        "report" : true
+        "report" : false
     },
     "categories": {
         "anime": false,
@@ -24,7 +24,7 @@
         "utility": true,
         "moderation": false,
         "fun": false,
-        "distube music": true,
+        "distube music": false,
         "setups": true
     },
      "lavalink": {
