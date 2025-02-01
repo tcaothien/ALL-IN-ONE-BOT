@@ -76,7 +76,8 @@ module.exports = async (client) => {
                 
                 const embed = new EmbedBuilder()
                     .setTitle("Chào mừng đến với New Life!")
-                    .setDescription(`- ✩₊˚Nơi Các Bạn Chat:/n' +
+                    .setDescription(`- ✩₊˚Nơi Các Bạn Chat:
+                    
                     '<#1329021806459490305>/n'
                     '- ✩₊˚Ticket Hỗ Trợ  Mọi Vấn Đề:/n' +
                     '<#1329019970604240937>/n' +
