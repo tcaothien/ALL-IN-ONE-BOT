@@ -12,7 +12,7 @@ module.exports = async function memberJoinHandler(client) {
         if (logChannel) {
             // Tạo embed thông báo thành viên mới tham gia
             const embed = new EmbedBuilder()
-                .setTitle('🎉 Thành viên mới đã tham gia')
+                .setTitle('🎉 Thành viên mới')
                 .setColor('#00FF00')
                 .addFields(
                     { name: 'Người dùng', value: `${member.user.tag} (${member.id})`, inline: true },
