@@ -8,7 +8,7 @@ module.exports = {
         const activities = [
            { name: 'Netflix', type: ActivityType.Watching },
             { name: 'Visual Studio Code', type: ActivityType.Playing },
-            { name: 'on YouTube', type: ActivityType.Streaming },
+            { name: 'YouTube', type: ActivityType.Streaming },
             { name: 'Spotify', type: ActivityType.Listening },
         ];
 
