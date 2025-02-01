@@ -62,7 +62,7 @@ module.exports = async (client) => {
                 const serverIcon = member.guild.iconURL({ format: 'png', dynamic: true, size: 256 });
                 const randomImage = getRandomImage(data.welcomeImages);
                 
-                const shortTitle = truncateUsername(`Welcome ${memberCount}${suffix}`, 15);
+                const shortTitle = truncateUsername(`Welcome`, 15);
 
                 const welcomecard = new Wcard()
                     .setName(userName)
@@ -75,22 +75,31 @@ module.exports = async (client) => {
                 const attachment = new AttachmentBuilder(card, { name: 'welcome.png' });
                 
                 const embed = new EmbedBuilder()
-                    .setTitle("Welcome!")
-                    .setDescription(`${member}, Bạn là thành viên **${memberCount}${suffix}** của server!`)
-                    .setColor("#00e5ff")
+                    .setTitle("Chào mừng đến với New Life!")
+                    .setDescription(`- ✩₊˚Nơi Các Bạn Chat:/n' +
+                    '<#1329021806459490305>/n'
+                    '- ✩₊˚Ticket Hỗ Trợ  Mọi Vấn Đề:/n' +
+                    '<#1329019970604240937>/n' +
+                    '- ✩₊˚Đọc Luật Trước Khi Chat Nhé:/n' +
+                    '<#1329020275815092306>/n' +
+                    '- ✩₊˚Pick Role Ở Đây:/m' +
+                    '<#1329279567243903087>/n' +
+                    '- ✩₊˚Donate Cho New Life ở đây:/n' +
+                    '<#1329022060428791848>`)
+                    .setColor("FF0000")
                     .setThumbnail(serverIcon)
                     .setImage('attachment://welcome.png')
                     .addFields(
-                        { name: 'Tên Người Dùng', value: userName, inline: true },
+                        { name: 'Thành viên', value: userName, inline: true },
                         { name: 'Ngày Tham Gia', value: joinDate, inline: true },
                         { name: 'Tài Khoản Được Tạo', value: creationDate, inline: true }
                     )
-                    .setFooter({ text: "Chúng tôi rất vui khi có bạn ở đây!", iconURL: serverIcon })
+                    .setFooter({ text: "Chúng tớ rất vui khi có bạn ở đây!", iconURL: serverIcon })
                     .setAuthor({ name: userName, iconURL: member.user.displayAvatarURL() })
                     .setTimestamp();
                 
                 welcomeChannel.send({
-                    content: `Chào ${member}!`,
+                    content: `<@&1332154370984251472> có bạn ${member} vừa lạc vào New Life nèe <a:bbab:1332016657421303879>`,
                     embeds: [embed],
                     files: [attachment]
                 });                
