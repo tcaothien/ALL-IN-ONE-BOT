@@ -15,25 +15,29 @@ module.exports = async function commandExecutionHandler(client) {
             timestamp: new Date(),
         };
 
-   
+        // Lưu thông tin lệnh đã được thực thi vào cơ sở dữ liệu
         await commandLogsCollection.insertOne(logData);
 
         if (guild) {
+            // Kiểm tra cấu hình ghi log của máy chủ
             const config = await commandLogsCollection.findOne({ guildId: guild.id });
 
             if (config && config.channelId) {
+                // Lấy kênh ghi log từ ID đã cấu hình
                 const logChannel = client.channels.cache.get(config.channelId);
                 if (logChannel) {
+                    // Tạo embed thông báo lệnh đã được thực thi
                     const embed = new EmbedBuilder()
-                        .setTitle('📜 Command Executed')
+                        .setTitle('📜 Lệnh đã được thực thi')
                         .setColor('#3498db')
                         .addFields(
-                            { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
-                            { name: 'Command', value: `/${commandName}`, inline: true },
-                            { name: 'Channel', value: `<#${channel.id}>`, inline: true },
+                            { name: 'Người dùng', value: `${user.tag} (${user.id})`, inline: true },
+                            { name: 'Lệnh', value: `/${commandName}`, inline: true },
+                            { name: 'Kênh', value: `<#${channel.id}>`, inline: true },
                         )
                         .setTimestamp();
 
+                    // Gửi thông báo vào kênh ghi log
                     logChannel.send({ embeds: [embed] });
                 }
             }
