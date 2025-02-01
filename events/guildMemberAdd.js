@@ -77,16 +77,15 @@ module.exports = async (client) => {
                 const embed = new EmbedBuilder()
                     .setTitle("Chào mừng đến với New Life!")
                     .setDescription(`- ✩₊˚Nơi Các Bạn Chat:
-                    
-                    '<#1329021806459490305>/n'
-                    '- ✩₊˚Ticket Hỗ Trợ  Mọi Vấn Đề:/n' +
-                    '<#1329019970604240937>/n' +
-                    '- ✩₊˚Đọc Luật Trước Khi Chat Nhé:/n' +
-                    '<#1329020275815092306>/n' +
-                    '- ✩₊˚Pick Role Ở Đây:/m' +
-                    '<#1329279567243903087>/n' +
-                    '- ✩₊˚Donate Cho New Life ở đây:/n' +
-                    '<#1329022060428791848>`)
+                    <#1329021806459490305>
+                    - ✩₊˚Ticket Hỗ Trợ  Mọi Vấn Đề:
+                    <#1329019970604240937>
+                    - ✩₊˚Đọc Luật Trước Khi Chat Nhé:
+                    <#1329020275815092306>
+                    - ✩₊˚Pick Role Ở Đây:
+                    <#1329279567243903087>
+                    - ✩₊˚Donate Cho New Life ở đây:
+                    <#1329022060428791848>`)
                     .setColor("FF0000")
                     .setThumbnail(serverIcon)
                     .setImage('attachment://welcome.png')
