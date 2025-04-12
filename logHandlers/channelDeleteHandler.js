@@ -1,6 +1,6 @@
 const { logsCollection } = require('../mongodb');
 const { EmbedBuilder, ChannelType } = require('discord.js');
-
+const logHandlersIcons = require('../UI/icons/loghandlers');
 module.exports = async function channelDeleteHandler(client) {
     client.on('channelDelete', async (channel) => {
         const config = await logsCollection.findOne({ guildId: channel.guild.id, eventType: 'channelDelete' });
@@ -23,11 +23,13 @@ module.exports = async function channelDeleteHandler(client) {
 
             const embed = new EmbedBuilder()
                 .setTitle('🗑️ Channel Deleted')
+                .setThumbnail(logHandlersIcons.staffIcon)
                 .setColor('#FF0000')
                 .addFields(
                     { name: 'Channel', value: `${channel.name} (${channel.id})`, inline: true },
                     { name: 'Type', value: channelType, inline: true },
                 )
+                .setFooter({ text: 'Logs System', iconURL: logHandlersIcons.footerIcon })
                 .setTimestamp();
 
             logChannel.send({ embeds: [embed] });

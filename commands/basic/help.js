@@ -1,30 +1,9 @@
-/*
-
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-                                                 
-  _________ ___ ___ ._______   _________    
- /   _____//   |   \|   \   \ /   /  _  \   
- \_____  \/    ~    \   |\   Y   /  /_\  \  
- /        \    Y    /   | \     /    |    \ 
-/_______  /\___|_  /|___|  \___/\____|__  / 
-        \/       \/                     \/  
-                    
-DISCORD :  https://discord.com/invite/xQF9f9yUEM                   
-YouTube : https://www.youtube.com/@GlaceYT                         
-
-Command Verified : ✓  
-Website        : ssrr.tech  
-Test Passed    : ✓
-
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-*/
-
-
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const config = require('../../config.json');
 const cmdIcons = require('../../UI/icons/commandicons');
+const { helpBanner } = require('../../UI/banners/SetupBanners');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -33,12 +12,27 @@ module.exports = {
 
     async execute(interaction) {
         if (interaction.isCommand && interaction.isCommand()) {
-        
+            // Constants for styling
             const BOT_ICON = "https://cdn.discordapp.com/emojis/1334648756649590805.png";
-            const EMBED_COLOR = "#3498db";
+            const EMBED_COLOR = "#5865F2"; // Discord blurple for a more modern look
+            const FOOTER_TEXT = "All In One | The Discord Operating System • Created by GlaceYT";
             const COMMANDS_DIR = path.join(__dirname, '../../commands');
             const EXCESS_COMMANDS_DIR = path.join(__dirname, '../../excesscommands');
 
+            // Safe category icons using standard Discord emojis
+            const CATEGORY_ICONS = {
+                utility: "🛠️",
+                moderation: "🛡️",
+                fun: "🎮",
+                music: "🎵",
+                economy: "💰",
+                admin: "⚙️",
+                info: "ℹ️",
+                games: "🎲",
+                settings: "🔧",
+                misc: "📦"
+                // Add more category-specific icons as needed
+            };
         
             const getEnabledCategories = (configSet) =>
                 Object.entries(configSet)
@@ -54,7 +48,6 @@ module.exports = {
 
                     try {
                         if (!fs.existsSync(categoryPath)) {
-                            //console.warn(`[WARNING] Category folder not found: ${categoryPath}`);
                             continue;
                         }
 
@@ -71,14 +64,11 @@ module.exports = {
                                             for (const option of dataJSON.options) {
                                                
                                                 if (option.type === 1) {
-                                                  
                                                     subcommands.push(option.name);
                                                 } else if (option.type === 2 && option.options) {
-                                                   
                                                     const groupSubs = option.options
                                                         .filter(opt => opt.type === 1)
                                                         .map(opt => opt.name);
-                                                 
                                                     subcommands.push(`${option.name}: ${groupSubs.join(', ')}`);
                                                 }
                                             }
@@ -106,7 +96,7 @@ module.exports = {
                 return commandData;
             };
 
-            // Create Pages for the help embed
+            // Create Pages for the help embed with enhanced styling
             const createPages = (commandSet, type) => {
                 const pages = [];
                 const prefixCount = Object.values(prefixCommands).reduce((acc, cmds) => acc + cmds.length, 0);
@@ -121,23 +111,29 @@ module.exports = {
                     }
                 }
                 const totalCount = masterCount + subCount + prefixCount;
-                // Info Page
+
+                // Enhanced Info Page
                 pages.push({
-                    title: 'Bot Information',
+                    title: '✨ ALL IN ONE BOT',
                     description: [
-                        `- **Developer:** GlaceYT`,
-                        `- **Version:** 1.2.1`,
-                        `- **Commands Loaded:** ${totalCommandsLoaded}`,
-                        `- **Master Commands:** ${masterCount}`,
-                        `- **Sub Commands:** ${subCount}`,
-                        `- **Total Commands:** ${totalCount}`,
-                        `- **Categories Enabled:** ${getEnabledCategories(config.categories).join(', ')}`,
-                        `- **Prefix Commands:** ${Object.values(config.excessCommands).some(v => v) ? 'Enabled' : 'Disabled'}`
+                        '### THE DISCORD OPERATING SYSTEM',
+                        '',
+                        '> The ultimate Discord bot for all your server needs',
+                        '',
+                        '**BOT STATISTICS**',
+                        `\`🧠\` **Version:** 1.2.2`,
+                        `\`🛠️\` **Total Commands:** ${totalCount}`,
+                        `\`⚙️\` **Commands Loaded:** ${totalCommandsLoaded}`,
+                        `\`📌\` **Master Commands:** ${masterCount}`,
+                        `\`📎\` **Sub Commands:** ${subCount}`,
+                        `\`💻\` **Prefix Commands:** ${Object.values(config.excessCommands).some(v => v) ? '`Enabled`' : '`Disabled`'}`,
+                        '',
                     ].join('\n'),
-                    author: { name: 'All In One Bot' }
+                    author: { name: 'ALL IN ONE BOT • COMMAND CENTER' },
+                    icon: '📚' // Safe icon for dropdown
                 });
 
-                // Command Pages for each category
+                // Enhanced Command Pages for each category
                 for (const [category, commands] of Object.entries(commandSet)) {
                     if (commands.length === 0) continue;
 
@@ -146,25 +142,37 @@ module.exports = {
                         return acc + (cmd.subcommands ? cmd.subcommands.length : 0);
                     }, 0);
                     const totalNoOfCommands = commands.length + totalSubcommands;
+                    
+                    // Get category icon or use a default
+                    const categoryIcon = CATEGORY_ICONS[category.toLowerCase()] || "📁";
+                    
                     const commandLines = commands.map(cmd => {
-                        let line = `• **\`${cmd.name}\`** - ${cmd.description}`;
+                        let line = `\`${cmd.name}\` • ${cmd.description}`;
                         if (cmd.subcommands && cmd.subcommands.length > 0) {
-                            // Append subcommands count and list each on a new indented line.
-                            line += `\n    **Subcommands (${cmd.subcommands.length}):** \n → ${cmd.subcommands.join('\n→ ')}`;
+                            // Improved subcommands formatting
+                            line += `\n> **Subcommands (${cmd.subcommands.length}):**\n`;
+                            cmd.subcommands.forEach(subcmd => {
+                                line += `> • \`${subcmd}\`\n`;
+                            });
                         }
                         return line;
                     });
 
                     pages.push({
-                        title: `📁 ${category.charAt(0).toUpperCase() + category.slice(1)} Commands`,
+                        title: `${categoryIcon} ${category.charAt(0).toUpperCase() + category.slice(1)} Commands`,
                         description: [
-                            `**Total Commands:** ${totalNoOfCommands}`,
-                            `**Master Commands:** ${commands.length}`,
-                            `**Integrated Subcommands:** ${totalSubcommands}`,
-                            `**Usage Type:** ${type === 'slash' ? 'Slash Commands' : `Prefix: \`${config.prefix}\``}`
+                            `### ${category.toUpperCase()} COMMAND MODULE`,
+                            '',
+                            '**MODULE STATISTICS**',
+                            `\`📊\` **Total Commands:** ${totalNoOfCommands}`,
+                            `\`🔍\` **Master Commands:** ${commands.length}`,
+                            `\`🔗\` **Integrated Subcommands:** ${totalSubcommands}`,
+                            `\`⌨️\` **Usage Type:** ${type === 'slash' ? '`Slash Commands`' : `\`Prefix: ${config.prefix}\``}`,
+                            ''
                         ].join('\n'),
                         commands: commandLines,
-                        author: { name: `${category.toUpperCase()} COMMANDS` }
+                        author: { name: `${category.toUpperCase()} • COMMAND MODULE` },
+                        icon: categoryIcon // Safe icon for dropdown
                     });
                 }
 
@@ -183,7 +191,7 @@ module.exports = {
             let currentSet = slashPages;
             let isPrefix = false;
 
-            // Function to create the embed for the current page.
+            // Function to create the embed for the current page
             const createEmbed = () => {
                 const page = currentSet[currentPage];
                 const embed = new EmbedBuilder()
@@ -195,64 +203,81 @@ module.exports = {
                         iconURL: BOT_ICON,
                         url: "https://discord.gg/xQF9f9yUEM"
                     })
+                    .setImage(helpBanner)
+                    .setFooter({ text: `${FOOTER_TEXT} • Page ${currentPage + 1}/${currentSet.length}` })
                     .setTimestamp();
 
-                // Handle command list fields and ensure each field is within Discord's 1024-character limit.
+                // Handle command list fields with improved formatting
                 if (page.commands && page.commands.length > 0) {
-                    // Join all commands with newline separator.
-                    const joinedCommands = page.commands.join('\n');
+                    const joinedCommands = page.commands.join('\n\n');
                     if (joinedCommands.length > 1024) {
                         const fields = [];
                         let fieldValue = '';
+                        let fieldCount = 1;
 
                         for (const line of page.commands) {
-                            // +1 for newline character
-                            if (fieldValue.length + line.length + 1 > 1024) {
-                                fields.push({ name: 'Command List', value: fieldValue });
-                                fieldValue = line + '\n';
+                            // +2 for double newline character
+                            if (fieldValue.length + line.length + 2 > 1024) {
+                                fields.push({ 
+                                    name: `Command List (Part ${fieldCount})`, 
+                                    value: fieldValue.trim() 
+                                });
+                                fieldCount++;
+                                fieldValue = line + '\n\n';
                             } else {
-                                fieldValue += line + '\n';
+                                fieldValue += line + '\n\n';
                             }
                         }
                         if (fieldValue) {
-                            fields.push({ name: 'Command List', value: fieldValue });
+                            fields.push({ 
+                                name: `Command List ${fieldCount > 1 ? `(Part ${fieldCount})` : ''}`, 
+                                value: fieldValue.trim() 
+                            });
                         }
                         embed.setFields(fields);
                     } else {
-                        embed.setFields([{ name: 'Command List', value: joinedCommands }]);
+                        embed.setFields([{ name: '💎 Available Commands', value: joinedCommands }]);
                     }
                 }
                 return embed;
             };
 
-            // Function to create action rows (dropdown and buttons)
+            // Function to create action rows with fixed dropdown menu
             const createComponents = () => {
+                // Fixed dropdown - using predefined emoji strings instead of extracted ones
                 const row1 = new ActionRowBuilder().addComponents(
                     new StringSelectMenuBuilder()
                         .setCustomId('pageSelect')
-                        .setPlaceholder('Select a category')
-                        .addOptions(currentSet.map((page, i) => ({
-                            label: page.title.substring(0, 25),
-                            value: i.toString(),
-                            description: `View ${page.title}`
-                        })))
+                        .setPlaceholder('📋 Select a category...')
+                        .addOptions(currentSet.map((page, i) => {
+                            return {
+                                label: page.title.replace(/^[^\w\s]\s*/, ''), // Remove any leading emoji
+                                value: i.toString(),
+                                description: `View ${page.title.replace(/^[^\w\s]\s*/, '')} section`,
+                                emoji: page.icon // Use predefined safe emoji
+                            };
+                        }))
                 );
 
+                // Better styled buttons
                 const row2 = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setCustomId('previous')
-                        .setLabel('Back')
-                        .setStyle(ButtonStyle.Primary)
+                        .setLabel('Previous')
+                        .setEmoji('⬅️')
+                        .setStyle(ButtonStyle.Secondary)
                         .setDisabled(currentPage === 0),
                     new ButtonBuilder()
                         .setCustomId('next')
                         .setLabel('Next')
-                        .setStyle(ButtonStyle.Primary)
+                        .setEmoji('➡️')
+                        .setStyle(ButtonStyle.Secondary)
                         .setDisabled(currentPage === currentSet.length - 1),
                     new ButtonBuilder()
                         .setCustomId('switchMode')
-                        .setLabel(isPrefix ? 'Show Slash Commands' : 'Show Prefix Commands')
-                        .setStyle(ButtonStyle.Secondary)
+                        .setLabel(isPrefix ? 'Slash Commands' : 'Prefix Commands')
+                        .setEmoji('🔄')
+                        .setStyle(ButtonStyle.Primary)
                 );
 
                 return [row1, row2];
@@ -266,10 +291,16 @@ module.exports = {
             });
 
             // Collector Setup to handle interactions
-            const collector = reply.createMessageComponentCollector({ time: 120000 });
+            const collector = reply.createMessageComponentCollector({ time: 180000 }); // Extended time to 3 minutes
 
             collector.on('collect', async (i) => {
-                if (i.user.id !== interaction.user.id) return;
+                if (i.user.id !== interaction.user.id) {
+                    await i.reply({ 
+                        content: `⚠️ Only ${interaction.user.tag} can interact with these controls.`, 
+                        ephemeral: true 
+                    });
+                    return;
+                }
 
                 if (i.isStringSelectMenu()) {
                     currentPage = parseInt(i.values[0]);
@@ -296,40 +327,41 @@ module.exports = {
             });
 
             collector.on('end', () => {
-                interaction.editReply({ components: [] }).catch(() => { });
+                // Disable all buttons when collector expires
+                const disabledComponents = createComponents().map(row => {
+                    const updatedRow = new ActionRowBuilder();
+                    row.components.forEach(component => {
+                        if (component.data.type === 2) { // Button type
+                            updatedRow.addComponents(
+                                ButtonBuilder.from(component.data).setDisabled(true)
+                            );
+                        } else if (component.data.type === 3) { // StringSelectMenu type
+                            updatedRow.addComponents(
+                                StringSelectMenuBuilder.from(component.data).setDisabled(true)
+                            );
+                        }
+                    });
+                    return updatedRow;
+                });
+                
+                interaction.editReply({ 
+                    components: disabledComponents,
+                    content: "⏱️ Help command session expired. Use `/help` again to restart."
+                }).catch(() => {});
             });
         } else {
             const embed = new EmbedBuilder()
-                .setColor('#3498db')
+                .setColor('#ff3860')
                 .setAuthor({
-                    name: "Alert!",
+                    name: "Command Error",
                     iconURL: cmdIcons.dotIcon,
                     url: "https://discord.gg/xQF9f9yUEM"
                 })
-                .setDescription('- This command can only be used through slash command!\n- Please use `/help`')
+                .setDescription('> ⚠️ This command can only be used as a slash command!\n> Please use `/help` instead.')
+                .setFooter({ text: 'All In One Bot • Error' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     }
 };
-/*
-
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-                                                 
-  _________ ___ ___ ._______   _________    
- /   _____//   |   \|   \   \ /   /  _  \   
- \_____  \/    ~    \   |\   Y   /  /_\  \  
- /        \    Y    /   | \     /    |    \ 
-/_______  /\___|_  /|___|  \___/\____|__  / 
-        \/       \/                     \/  
-                    
-DISCORD :  https://discord.com/invite/xQF9f9yUEM                   
-YouTube : https://www.youtube.com/@GlaceYT                         
-
-Command Verified : ✓  
-Website        : ssrr.tech  
-Test Passed    : ✓
-
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-*/

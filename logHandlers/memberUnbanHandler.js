@@ -1,5 +1,6 @@
 const { logsCollection } = require('../mongodb');
 const { EmbedBuilder } = require('discord.js');
+const logHandlersIcons = require('../UI/icons/loghandlers');
 module.exports = async function memberUnbanHandler(client) {
     client.on('guildBanRemove', async (ban) => {
         const config = await logsCollection.findOne({ guildId: ban.guild.id, eventType: 'memberUnban' });
@@ -14,6 +15,7 @@ module.exports = async function memberUnbanHandler(client) {
                     { name: 'User', value: `${ban.user.tag} (${ban.user.id})`, inline: true },
                 )
                 .setThumbnail(ban.user.displayAvatarURL())
+                .setFooter({ text: 'Logs System', iconURL: logHandlersIcons.footerIcon })
                 .setTimestamp();
 
             logChannel.send({ embeds: [embed] });

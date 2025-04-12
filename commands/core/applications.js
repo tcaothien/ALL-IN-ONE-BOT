@@ -31,7 +31,7 @@ const {
     TextInputBuilder, 
     TextInputStyle 
 } = require('discord.js');
-const { serverConfigCollection } = require('../../mongodb'); 
+const checkPermissions = require('../../utils/checkPermissions');
 const { 
     createApplication, 
     deleteApplication, 
@@ -130,15 +130,7 @@ module.exports = {
         if (interaction.isCommand && interaction.isCommand()) {
             const guild = interaction.guild;
             const serverId = interaction.guild.id;
-            const configMangerData = await serverConfigCollection.findOne({ serverId });
-            const botManagers = configMangerData ? configMangerData.botManagers || [] : [];
-      
-            if (!botManagers.includes(interaction.user.id) && interaction.user.id !== guild.ownerId) {
-                return interaction.reply({ 
-                    content: '❌ Only the **server owner** or **bot managers** can use this command.', 
-                    flags: 64
-                });
-            }
+            if (!await checkPermissions(interaction)) return;
 
         await interaction.deferReply();
         const subcommand = interaction.options.getSubcommand();

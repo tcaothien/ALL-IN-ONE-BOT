@@ -1,341 +1,488 @@
 const {
-    ticketsCollection
-} = require('../mongodb');
-const {
     EmbedBuilder,
     ButtonBuilder,
     ButtonStyle,
     ActionRowBuilder,
     StringSelectMenuBuilder,
     PermissionsBitField,
-    ChannelType,
-    MessageFlagsBits
+    ChannelType, AttachmentBuilder
 } = require('discord.js');
 const ticketIcons = require('../UI/icons/ticketicons');
+const TicketConfig = require('../models/ticket/TicketConfig');
+const TicketUserData = require('../models/ticket/TicketUserData');
+const generateTranscript = require('../utils/generateTranscript');
+const fs = require('fs').promises;
+const path = require('path');
+const setupBanners = require('../UI/banners/SetupBanners');
 
-let config = {};
+let configCache = {};
+let lastConfigLoad = null;
+const CONFIG_REFRESH_INTERVAL = 60000; 
+
 
 async function loadConfig() {
     try {
-        const tickets = await ticketsCollection.find({}).toArray();
-        config.tickets = tickets.reduce((acc, ticket) => {
-            acc[ticket.serverId] = {
+        const tickets = await TicketConfig.find({});
+        const newCache = {};
+        
+        for (const ticket of tickets) {
+            newCache[ticket.serverId] = {
                 ticketChannelId: ticket.ticketChannelId,
+                transcriptChannelId: ticket.transcriptChannelId,
                 adminRoleId: ticket.adminRoleId,
-                status: ticket.status
+                status: ticket.status,
+                categoryId: ticket.categoryId,
+                ownerId: ticket.ownerId
             };
-            return acc;
-        }, {});
+        }
+        
+        configCache = newCache;
+        lastConfigLoad = Date.now();
+        return configCache;
     } catch (err) {
-        console.error('Error loading config from MongoDB:', err);
+        console.error('Error loading ticket configs:', err);
+        return configCache; 
     }
 }
 
-setInterval(loadConfig, 5000);
+
+async function getConfig(force = false) {
+    if (force || !lastConfigLoad || (Date.now() - lastConfigLoad > CONFIG_REFRESH_INTERVAL)) {
+        await loadConfig();
+    }
+    return configCache;
+}
 
 module.exports = (client) => {
+  
     client.on('ready', async () => {
-        try {
-            await loadConfig();
-            monitorConfigChanges(client);
-        } catch (error) {
-            console.error('Error during client ready event:', error);
+        console.log('Initializing ticket system...');
+        await loadConfig();
+        
+     
+        setTimeout(() => setupTicketChannels(client), 5000);
+        
+       
+        setInterval(() => syncTicketChannels(client), 30 * 60 * 1000); 
+        
+       
+        setInterval(() => cleanupStaleTickets(client), 15 * 60 * 1000); 
+    });
+
+ 
+    client.on('interactionCreate', async (interaction) => {
+   
+        if (interaction.isStringSelectMenu() && interaction.customId === 'select_ticket_type') {
+            await handleTicketCreation(interaction, client);
+        } 
+      
+        else if (interaction.isButton() && interaction.customId.startsWith('close_ticket_')) {
+            await handleTicketClose(interaction, client);
+        } 
+    
+        else if (interaction.isButton() && interaction.customId.startsWith('ping_staff_')) {
+            await handleStaffPing(interaction, client);
         }
     });
 
-    client.on('interactionCreate', async (interaction) => {
+   
+    client.on('guildDelete', async (guild) => {
         try {
-            if (interaction.isStringSelectMenu() && interaction.customId === 'select_ticket_type') {
-                handleSelectMenu(interaction, client);
-            } else if (interaction.isButton() && interaction.customId.startsWith('close_ticket_')) {
-                handleCloseButton(interaction, client);
-            }
-        } catch (error) {
-            console.error('Error handling interaction:', error);
+         
+            await TicketConfig.deleteOne({ serverId: guild.id });
+            await TicketUserData.deleteMany({ guildId: guild.id });
+            
+           
+            const config = await getConfig(true);
+            delete config[guild.id];
+            
+            console.log(`Cleaned up ticket data for deleted guild: ${guild.name} (${guild.id})`);
+        } catch (err) {
+            console.error(`Error cleaning up data for deleted guild ${guild.id}:`, err);
         }
     });
 };
 
-async function monitorConfigChanges(client) {
-    let previousConfig = JSON.parse(JSON.stringify(config));
 
-    setInterval(async () => {
-        try {
-            await loadConfig();
-            if (JSON.stringify(config) !== JSON.stringify(previousConfig)) {
-                for (const guildId of Object.keys(config.tickets)) {
-                    const settings = config.tickets[guildId];
-                    const previousSettings = previousConfig.tickets[guildId];
-
-                    if (
-                        settings &&
-                        settings.status &&
-                        settings.ticketChannelId &&
-                        (!previousSettings || settings.ticketChannelId !== previousSettings.ticketChannelId)
-                    ) {
-                        const guild = client.guilds.cache.get(guildId);
-                        if (!guild) continue;
-
-                        const ticketChannel = guild.channels.cache.get(settings.ticketChannelId);
-                        if (!ticketChannel) continue;
-
-                        const embed = new EmbedBuilder()
-                            .setAuthor({
-                                name: "Welcome to Ticket Support",
-                                iconURL: ticketIcons.mainIcon,
-                                url: "https://discord.gg/xQF9f9yUEM"
-                            })
-                            .setDescription(
-                                '- Please click below menu to create a new ticket.\n\n' +
-                                '**Ticket Guidelines:**\n' +
-                                '- Empty tickets are not permitted.\n' +
-                                '- Please be patient while waiting for a response from our support team.'
-                            )
-                            .setFooter({ text: 'We are here to Help!', iconURL: ticketIcons.modIcon })
-                            .setColor('#00FF00')
-                            .setTimestamp();
-
-                        const menu = new StringSelectMenuBuilder()
-                            .setCustomId('select_ticket_type')
-                            .setPlaceholder('Choose ticket type')
-                            .addOptions([
-                                { label: '🆘 Support', value: 'support' },
-                                { label: '📂 Suggestion', value: 'suggestion' },
-                                { label: '💜 Feedback', value: 'feedback' },
-                                { label: '⚠️ Report', value: 'report' }
-                            ]);
-
-                        const row = new ActionRowBuilder().addComponents(menu);
-
-                        try {
-                            await ticketChannel.send({
-                                embeds: [embed],
-                                components: [row]
-                            });
-                        } catch (sendError) {
-                            console.error("Error sending ticket menu message:", sendError);
-                        }
-
-                        previousConfig = JSON.parse(JSON.stringify(config));
-                    }
+async function setupTicketChannels(client) {
+    const config = await getConfig(true);
+    
+    for (const [guildId, settings] of Object.entries(config)) {
+        if (settings.status && settings.ticketChannelId) {
+            const guild = client.guilds.cache.get(guildId);
+            if (!guild) continue;
+            
+            const ticketChannel = guild.channels.cache.get(settings.ticketChannelId);
+            if (!ticketChannel) continue;
+            
+           
+            try {
+                const messages = await ticketChannel.messages.fetch({ limit: 10 });
+                const botMessages = messages.filter(m => 
+                    m.author.bot && 
+                    m.embeds.length > 0 && 
+                    m.embeds[0].data.author?.name === "Welcome to Ticket Support"
+                );
+                
+                if (botMessages.size === 0) {
+                   
+                    await sendTicketEmbed(ticketChannel);
+                    console.log(`Initialized ticket embed in channel ${ticketChannel.name} (${ticketChannel.id})`);
                 }
+            } catch (err) {
+                console.error(`Error checking for ticket embeds in guild ${guildId}:`, err);
             }
-        } catch (error) {
-            console.error("Error in monitorConfigChanges:", error);
         }
-    }, 5000);
+    }
 }
 
-async function handleSelectMenu(interaction, client) {
+
+async function sendTicketEmbed(channel) {
+    const embed = new EmbedBuilder()
+        .setAuthor({ name: "Welcome to Ticket Support", iconURL: ticketIcons.mainIcon })
+        .setDescription(
+            '- Please click below menu to create a new ticket.\n\n' +
+            '**Ticket Guidelines:**\n' +
+            '- Empty tickets are not permitted.\n' +
+            '- Please be patient while waiting for a response from our support team.'
+        )
+
+        .setFooter({ text: 'We are here to Help!', iconURL: ticketIcons.modIcon })
+        .setColor('#00FF00')
+        .setImage(setupBanners.ticketBanner)
+        .setTimestamp();
+
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId('select_ticket_type')
+        .setPlaceholder('Choose ticket type')
+        .addOptions([
+            { label: '🆘 Support', value: 'support' },
+            { label: '📂 Suggestion', value: 'suggestion' },
+            { label: '💜 Feedback', value: 'feedback' },
+            { label: '⚠️ Report', value: 'report' }
+        ]);
+
+    const row = new ActionRowBuilder().addComponents(menu);
+
     try {
-        await interaction.deferReply({ flags: 64 });
-    } catch (error) {
-        console.error("Error deferring reply:", error);
+        return await channel.send({ embeds: [embed], components: [row] });
+    } catch (err) {
+        console.error(`Error sending ticket embed to channel ${channel.id}:`, err);
+        return null;
     }
+}
+
+
+async function handleTicketCreation(interaction, client) {
+    await interaction.deferReply({ ephemeral: true });
 
     const { guild, user, values } = interaction;
-    if (!guild || !user) return;
-
-    const guildId = guild.id;
-    const userId = user.id;
     const ticketType = values[0];
-    const settings = config.tickets[guildId];
-    if (!settings) return;
 
-    try {
-        const ticketExists = await ticketsCollection.findOne({ guildId, userId });
-        if (ticketExists) {
-            return interaction.followUp({
-                content: 'You already have an open ticket.',
-                flags: 64
-            });
-        }
-    } catch (error) {
-        console.error("Error checking for existing ticket:", error);
+  
+    const config = await TicketConfig.findOne({ serverId: guild.id });
+    if (!config || !config.status) {
+        return interaction.followUp({ 
+            content: '⚠️ Ticket system is not configured or is disabled.',
+            ephemeral: true 
+        });
     }
 
-    let ticketChannel;
+    
+    const existingTicket = await TicketUserData.findOne({ 
+        userId: user.id, 
+        guildId: guild.id 
+    });
+    
+    if (existingTicket) {
+        const existingChannel = guild.channels.cache.get(existingTicket.ticketChannelId);
+        if (existingChannel) {
+            return interaction.followUp({
+                content: `❌ You already have an open ticket: ${existingChannel}`,
+                ephemeral: true
+            });
+        } else {
+          
+            await TicketUserData.deleteOne({ _id: existingTicket._id });
+        }
+    }
+
+  
     try {
-        ticketChannel = await guild.channels.create({
-            name: `${user.username}-${ticketType}-ticket`,
+        const ticketChannel = await guild.channels.create({
+            name: `${user.username}-${ticketType}`,
             type: ChannelType.GuildText,
+            parent: config.categoryId || null,
             permissionOverwrites: [
-                {
-                    id: guild.roles.everyone,
-                    deny: [PermissionsBitField.Flags.ViewChannel]
+                { 
+                    id: guild.roles.everyone, 
+                    deny: [PermissionsBitField.Flags.ViewChannel] 
                 },
-                {
-                    id: userId,
+                { 
+                    id: user.id, 
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
+                        PermissionsBitField.Flags.ViewChannel, 
+                        PermissionsBitField.Flags.SendMessages, 
                         PermissionsBitField.Flags.ReadMessageHistory
-                    ]
+                    ] 
                 },
-                {
-                    id: settings.adminRoleId,
+                { 
+                    id: config.adminRoleId, 
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
+                        PermissionsBitField.Flags.ViewChannel, 
+                        PermissionsBitField.Flags.SendMessages, 
                         PermissionsBitField.Flags.ReadMessageHistory
-                    ]
+                    ] 
                 }
             ]
         });
-    } catch (error) {
-        console.error("Error creating ticket channel:", error);
-        return interaction.followUp({
-            content: "Failed to create ticket channel due to missing permissions or other errors.",
-            flags: 64
+
+        
+        await TicketUserData.create({
+            userId: user.id,
+            guildId: guild.id,
+            ticketChannelId: ticketChannel.id
         });
-    }
 
-    const ticketId = `${guildId}-${ticketChannel.id}`;
-    try {
-        await ticketsCollection.insertOne({ id: ticketId, channelId: ticketChannel.id, guildId, userId, type: ticketType });
-    } catch (error) {
-        console.error("Error inserting ticket into the database:", error);
-    }
+      
+        const ticketId = `${user.id}-${ticketChannel.id}`;
+        const ticketEmbed = new EmbedBuilder()
+            .setAuthor({ name: `${ticketType.charAt(0).toUpperCase() + ticketType.slice(1)} Ticket`, iconURL: ticketIcons.modIcon })
+            .setDescription(`Hello ${user}, welcome to our support!\nPlease describe your issue in detail.`)
+            .setFooter({ text: 'Your satisfaction is our priority', iconURL: ticketIcons.heartIcon })
+            .setColor('#00FF00')
+            .setTimestamp();
 
-    const ticketEmbed = new EmbedBuilder()
-        .setAuthor({
-            name: "Support Ticket",
-            iconURL: ticketIcons.modIcon,
-            url: "https://discord.gg/xQF9f9yUEM"
-        })
-        .setDescription(
-            `Hello ${user}, welcome to our support!\n- Please provide a detailed description of your issue\n- Our support team will assist you as soon as possible.\n- Feel free to open another ticket if this one is closed.`
-        )
-        .setFooter({ text: 'Your satisfaction is our priority', iconURL: ticketIcons.heartIcon })
-        .setColor('#00FF00')
-        .setTimestamp();
+        const closeButton = new ButtonBuilder()
+            .setCustomId(`close_ticket_${ticketId}`)
+            .setLabel('Close Ticket')
+            .setStyle(ButtonStyle.Danger);
 
-    const closeButton = new ButtonBuilder()
-        .setCustomId(`close_ticket_${ticketId}`)
-        .setLabel('Close Ticket')
-        .setStyle(ButtonStyle.Danger);
+        const pingButton = new ButtonBuilder()
+            .setCustomId(`ping_staff_${ticketId}`)
+            .setLabel('Ping Staff')
+            .setStyle(ButtonStyle.Primary);
 
-    const actionRow = new ActionRowBuilder().addComponents(closeButton);
+        const actionRow = new ActionRowBuilder().addComponents(closeButton, pingButton);
 
-    try {
-        await ticketChannel.send({
-            content: `${user}`,
-            embeds: [ticketEmbed],
-            components: [actionRow]
+        await ticketChannel.send({ 
+            content: `${user}`, 
+            embeds: [ticketEmbed], 
+            components: [actionRow] 
         });
-    } catch (error) {
-        console.error("Error sending message in the ticket channel:", error);
-    }
 
-    const embed = new EmbedBuilder()
-        .setColor(0x0099ff)
-        .setAuthor({
-            name: "Ticket Created!",
-            iconURL: ticketIcons.correctIcon,
-            url: "https://discord.gg/xQF9f9yUEM"
-        })
-        .setDescription(`- Your ${ticketType} ticket has been created.`)
-        .addFields(
-            { name: 'Ticket Channel', value: `${ticketChannel.url}` },
-            { name: 'Instructions', value: 'Please describe your issue in detail.' }
-        )
-        .setTimestamp()
-        .setFooter({ text: 'Thank you for reaching out!', iconURL: ticketIcons.modIcon });
+      
+        try {
+            const confirmEmbed = new EmbedBuilder()
+                .setColor(0x0099ff)
+                .setAuthor({ name: "Ticket Created!", iconURL: ticketIcons.correctIcon })
+                .setDescription(`Your **${ticketType}** ticket has been created.`)
+                .addFields({ name: 'Ticket Channel', value: `${ticketChannel.url}` })
+                .setFooter({ text: 'Thank you for reaching out!', iconURL: ticketIcons.modIcon })
+                .setTimestamp();
 
-    try {
-        await user.send({
-            content: `Your ${ticketType} ticket has been created`,
-            embeds: [embed]
+            await user.send({ embeds: [confirmEmbed] });
+        } catch (err) {
+            console.log(`Could not send DM to user ${user.tag}`);
+        }
+
+        return interaction.followUp({ 
+            content: `✅ Your ticket has been created: ${ticketChannel}`,
+            ephemeral: true 
         });
-    } catch (error) {
-        console.error("Error sending DM to user:", error);
-    }
-
-    try {
-        await interaction.followUp({
-            content: 'Ticket created!',
-            flags: 64
+    } catch (err) {
+        console.error(`Error creating ticket for ${user.tag}:`, err);
+        return interaction.followUp({ 
+            content: '❌ Failed to create your ticket. Please try again later.',
+            ephemeral: true 
         });
-    } catch (error) {
-        console.error("Error sending follow-up message:", error);
     }
 }
 
-async function handleCloseButton(interaction, client) {
-    try {
-        await interaction.deferReply({ flags: 64 });
-    } catch (error) {
-        console.error("Error deferring reply in close button:", error);
-    }
+
+async function handleTicketClose(interaction, client) {
+    await interaction.deferReply({ ephemeral: true });
 
     const ticketId = interaction.customId.replace('close_ticket_', '');
+    const [userId, channelId] = ticketId.split('-');
     const { guild, user } = interaction;
-    if (!guild || !user) return;
 
-    let ticket;
-    try {
-        ticket = await ticketsCollection.findOne({ id: ticketId });
-    } catch (error) {
-        console.error("Error finding ticket in the database:", error);
-    }
-    if (!ticket) {
-        return interaction.followUp({
-            content: 'Ticket not found. Please report to staff!',
-            flags: 64
+  
+    const isTicketOwner = userId === user.id;
+    const config = await TicketConfig.findOne({ serverId: guild.id });
+    
+    if (!config) {
+        return interaction.followUp({ 
+            content: '❌ Ticket configuration not found.',
+            ephemeral: true 
         });
     }
 
-    const ticketChannel = guild.channels.cache.get(ticket.channelId);
-    if (ticketChannel) {
-        setTimeout(async () => {
+    const isAdmin = interaction.member.roles.cache.has(config.adminRoleId) || 
+                   user.id === config.ownerId || 
+                   interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
+
+    if (!isTicketOwner && !isAdmin) {
+        return interaction.followUp({ 
+            content: '❌ You do not have permission to close this ticket.',
+            ephemeral: true 
+        });
+    }
+
+
+    try {
+        const transcriptAttachment = await generateTranscript(interaction.channel, client);
+        
+   
+        const ticketOwner = await client.users.fetch(userId).catch(() => null);
+        if (ticketOwner) {
+            const dmEmbed = new EmbedBuilder()
+                .setColor(0x0099ff)
+                .setAuthor({ name: "Ticket Closed", iconURL: ticketIcons.correctIcon })
+                .setDescription(`Your ticket in **${guild.name}** has been closed.`)
+                .setTimestamp()
+                .setFooter({ text: 'Thanks for using our support system!', iconURL: ticketIcons.modIcon });
+
             try {
-                await ticketChannel.delete();
-            } catch (error) {
-                console.error("Error deleting ticket channel:", error);
+                await ticketOwner.send({
+                    content: 'Here is your ticket transcript:',
+                    embeds: [dmEmbed],
+                    files: [transcriptAttachment]
+                });
+            } catch (err) {
+                console.warn(`Could not DM user ${ticketOwner.tag}:`, err.message);
             }
-        }, 5000);
-    }
-
-    try {
-        await ticketsCollection.deleteOne({ id: ticketId });
-    } catch (error) {
-        console.error("Error deleting ticket from the database:", error);
-    }
-
-    let ticketUser;
-    try {
-        ticketUser = await client.users.fetch(ticket.userId);
-    } catch (error) {
-        console.error("Error fetching ticket user:", error);
-    }
-    if (ticketUser) {
-        const embed = new EmbedBuilder()
-            .setColor(0x0099ff)
-            .setAuthor({
-                name: "Ticket closed!",
-                iconURL: ticketIcons.correctrIcon,
-                url: "https://discord.gg/xQF9f9yUEM"
-            })
-            .setDescription(`- Your ticket has been closed.`)
-            .setTimestamp()
-            .setFooter({ text: 'Thank you for reaching out!', iconURL: ticketIcons.modIcon });
-
-        try {
-            await ticketUser.send({
-                content: `Your ticket has been closed.`,
-                embeds: [embed]
-            });
-        } catch (error) {
-            console.error("Error sending DM to ticket user:", error);
         }
+
+       
+        if (config.transcriptChannelId) {
+            const logChannel = guild.channels.cache.get(config.transcriptChannelId);
+            if (logChannel) {
+                const logEmbed = new EmbedBuilder()
+                    .setColor('#5865F2')
+                    .setTitle('Ticket Closed')
+                    .addFields(
+                        { name: 'Ticket', value: interaction.channel.name, inline: true },
+                        { name: 'Closed By', value: user.tag, inline: true },
+                        { name: 'Original Owner', value: ticketOwner?.tag || 'Unknown', inline: true }
+                    )
+                    .setTimestamp();
+                
+                await logChannel.send({ 
+                    content: `📩 Transcript from ticket ${interaction.channel.name}`,
+                    embeds: [logEmbed],
+                    files: [transcriptAttachment] 
+                });
+            }
+        }
+
+        await interaction.followUp({ 
+            content: '✅ Ticket closing in 5 seconds...',
+            ephemeral: true 
+        });
+
+
+setTimeout(async () => {
+    try {
+        const channel = await guild.channels.fetch(channelId).catch(() => null);
+        if (channel) {
+            await channel.delete();
+            console.log(`Deleted ticket channel: ${channel.id}`);
+        } else {
+            console.warn(`Channel ${channelId} not found. Possibly already deleted.`);
+        }
+
+        await TicketUserData.deleteOne({ userId, guildId: guild.id });
+
+     
+        try {
+            await fs.unlink(transcriptAttachment.attachment);
+        } catch (err) {
+            console.warn("Failed to delete transcript file:", err.message);
+        }
+    } catch (err) {
+        console.error("Error while closing ticket:", err);
+    }
+}, 5000);
+
+    } catch (err) {
+        console.error("Error generating transcript:", err);
+        return interaction.followUp({ 
+            content: '❌ Failed to close ticket. Please try again.',
+            ephemeral: true 
+        });
+    }
+}
+async function handleStaffPing(interaction, client) {
+    await interaction.deferReply({ ephemeral: true });
+
+    const { guild, channel, member } = interaction;
+    const configEntry = await TicketConfig.findOne({ serverId: guild.id });
+
+    if (!configEntry || !configEntry.adminRoleId) {
+        return interaction.followUp({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor('Red')
+                    .setTitle('⚠️ Staff Role Not Configured')
+                    .setDescription('Unable to ping staff as no admin role is set for tickets.')
+            ],
+            ephemeral: true
+        });
     }
 
-    try {
-        await interaction.followUp({
-            content: 'Ticket closed and user notified.',
-            flags: 64
+    const userData = await TicketUserData.findOne({ userId: member.id, guildId: guild.id });
+    const now = new Date();
+
+    if (userData?.lastPing && (now - userData.lastPing < 6 * 60 * 60 * 1000)) {
+        const nextPing = new Date(userData.lastPing.getTime() + 6 * 60 * 60 * 1000);
+        return interaction.followUp({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor('Red')
+                    .setTitle('🕒 Cooldown Active')
+                    .setDescription(`You can ping staff again <t:${Math.floor(nextPing.getTime() / 1000)}:R>.`)
+            ],
+            ephemeral: true
         });
-    } catch (error) {
-        console.error("Error sending follow-up for ticket closure:", error);
+    }
+
+    const staffPingEmbed = new EmbedBuilder()
+    .setColor('Orange')
+    .setAuthor({ name: "Staff Assistance Requested", iconURL: ticketIcons.pingIcon })
+    .setDescription(`${member} has requested support in this ticket.`)
+    .setFooter({ text: 'Notification sent via the ticket system', iconURL: member.displayAvatarURL() })
+    .setTimestamp();
+
+
+    await channel.send({
+        content: `<@&${configEntry.adminRoleId}>`,
+        embeds: [staffPingEmbed]
+    });
+
+    await TicketUserData.updateOne(
+        { userId: member.id, guildId: guild.id },
+        { $set: { lastPing: now } },
+        { upsert: true }
+    );
+
+    const confirmationEmbed = new EmbedBuilder()
+        .setColor('Green')
+        .setTitle('✅ Staff Notified')
+        .setDescription('A support team member has been notified and will assist you shortly.');
+
+    await interaction.followUp({ embeds: [confirmationEmbed], ephemeral: true });
+}
+async function cleanupStaleTickets(client) {
+    const allTickets = await TicketUserData.find({});
+    for (const ticket of allTickets) {
+        const guild = client.guilds.cache.get(ticket.guildId);
+        if (!guild) continue;
+
+        const channel = guild.channels.cache.get(ticket.ticketChannelId);
+        if (!channel) {
+            await TicketUserData.deleteOne({ _id: ticket._id });
+            console.log(`Cleaned up stale ticket for user ${ticket.userId} in guild ${ticket.guildId}`);
+        }
     }
 }

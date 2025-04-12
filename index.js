@@ -29,18 +29,17 @@ const loadEventHandlers = () => {
    
     console.log(`\n${colors.magenta}${colors.bright}📡 CORE SYSTEMS${colors.reset}`);
     console.log('─'.repeat(40));
-    
 
-    const guildMemberAddHandler = require('./events/guildMemberAdd');
-    guildMemberAddHandler(client);
-    logSystem('WELCOME');
 
   
     const ticketHandler = require('./events/ticketHandler');
     ticketHandler(client);
     logSystem('TICKET');
 
-  
+    const modmailHandler = require('./events/modmailHandler');
+    modmailHandler(client);
+    logSystem('MODMAIL');
+
     const voiceChannelHandler = require('./events/voiceChannelHandler');
     voiceChannelHandler(client);
     logSystem('VOICE');
@@ -68,10 +67,7 @@ const loadEventHandlers = () => {
    
     const nqnHandler = require('./events/nqn');
     nqnHandler(client);
-    const emojiHandler = require('./events/emojiHandler');
-    emojiHandler(client);
     logSystem('NQN');
-    logSystem('EMOJI');
     
     
     const afkHandler = require('./events/afkHandler');
@@ -106,7 +102,8 @@ const loadEventHandlers = () => {
     logSystem('LAVALINK MUSIC');
 
     require('./shiva');
-
+    console.log(`\n${colors.magenta}${colors.bright}🎵 DISTUBE SYSTEM${colors.reset}`);
+    require('./handlers/distube')(client);
    
     console.log('\n' + '═'.repeat(60));
     console.log(`${colors.green}${colors.bright}             ✨ ALL SYSTEMS INITIALIZED ✨${colors.reset}`);

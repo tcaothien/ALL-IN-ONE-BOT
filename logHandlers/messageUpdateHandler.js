@@ -1,3 +1,4 @@
+const logHandlersIcons = require('../UI/icons/loghandlers');
 const { logsCollection } = require('../mongodb');
 const { EmbedBuilder } = require('discord.js');
 module.exports = async function messageUpdateHandler(client) {
@@ -12,12 +13,14 @@ module.exports = async function messageUpdateHandler(client) {
             const embed = new EmbedBuilder()
                 .setTitle('✏️ Message Edited')
                 .setColor('#FFFF00')
+                .setThumbnail(logHandlersIcons.msgIcon)
                 .addFields(
                     { name: 'Author', value: oldMessage.author?.tag || 'Unknown', inline: true },
                     { name: 'Channel', value: `<#${oldMessage.channel.id}>`, inline: true },
                     { name: 'Old Content', value: oldMessage.content || '*No content*' },
                     { name: 'New Content', value: newMessage.content || '*No content*' },
                 )
+                .setFooter({ text: 'Logs System', iconURL: logHandlersIcons.footerIcon })
                 .setTimestamp();
 
             logChannel.send({ embeds: [embed] });

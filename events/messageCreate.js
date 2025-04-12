@@ -131,6 +131,7 @@ module.exports = {
         }
    
         try {
+            if (message.author.bot) return;
             const serverLevelingConfig = await serverLevelingLogsCollection.findOne({ serverId: guildId });
 
             if (serverLevelingConfig && serverLevelingConfig.levelingEnabled) {
@@ -199,7 +200,7 @@ module.exports = {
                 await command.execute(message, args, client);
             }
         } catch (commandError) {
-            console.error('Custom command error:', commandError);
+            //console.error('Custom command error:', commandError);
         }
     },
 };

@@ -23,6 +23,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { CommandInteraction, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const cmdIcons = require('../../UI/icons/commandicons');
 const lang = require('../../events/loadLanguage');
+const checkPermissions = require('../../utils/checkPermissions');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('createpoll')
@@ -69,6 +70,7 @@ module.exports = {
      */
     async execute(interaction) {
         if (interaction.isCommand && interaction.isCommand()) {
+            if (!await checkPermissions(interaction)) return;
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
                 return interaction.reply({ content: '❌ You do not have permission to manage channels.', flags: 64 });
             }

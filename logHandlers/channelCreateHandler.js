@@ -1,6 +1,6 @@
 const { logsCollection } = require('../mongodb');
 const { EmbedBuilder, ChannelType } = require('discord.js');
-
+const logHandlersIcons = require('../UI/icons/loghandlers');
 module.exports = async function channelCreateHandler(client) {
     client.on('channelCreate', async (channel) => {
         const config = await logsCollection.findOne({ guildId: channel.guild.id, eventType: 'channelCreate' });
@@ -24,10 +24,12 @@ module.exports = async function channelCreateHandler(client) {
             const embed = new EmbedBuilder()
                 .setTitle('📢 Channel Created')
                 .setColor('#00FF00')
+                .setThumbnail(logHandlersIcons.staffIcon)
                 .addFields(
                     { name: 'Channel', value: `${channel.name} (${channel.id})`, inline: true },
                     { name: 'Type', value: channelType, inline: true },
                 )
+                .setFooter({ text: 'Logs System', iconURL: logHandlersIcons.footerIcon })
                 .setTimestamp();
 
             logChannel.send({ embeds: [embed] });

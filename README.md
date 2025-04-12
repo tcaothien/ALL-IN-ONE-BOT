@@ -1,7 +1,7 @@
 ![Animated Background](https://i.imgur.com/ECZKmlO.gif)
 
 <h1 align="center" style="font-family: Arial, sans-serif; color: #FF6F61; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-  ALL IN ONE BOT 1.2.1
+  ALL IN ONE BOT 1.2.2
 </h1>
 
 <p align="center">
@@ -44,9 +44,21 @@
 
 ## How to Install
 
-### Step 1: Update `config.json`
+### Step 1: Update `config.json` [ USE ENV FILES ]
 
 1. Open the `config.json` and add your mongodb url.
+
+### ENV SETUP
+
+TOKEN=, 
+FACEBOOK_ACCESS_TOKEN=, 
+FORTNITE_API_KEY=, 
+YOUTUBE_API_KEY=, 
+TWITCH_CLIENT_ID=, 
+TWITCH_ACCESS_TOKEN=, 
+INSTAGRAM_ACCESS_TOKEN=, 
+MONGODB_URI=
+
 
 ### Step 2: Set Up Hosting Service
 

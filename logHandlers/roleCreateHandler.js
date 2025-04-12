@@ -1,3 +1,4 @@
+const logHandlersIcons = require('../UI/icons/loghandlers');
 const { logsCollection } = require('../mongodb');
 const { EmbedBuilder } = require('discord.js');
 module.exports = async function roleCreateHandler(client) {
@@ -10,10 +11,12 @@ module.exports = async function roleCreateHandler(client) {
             const embed = new EmbedBuilder()
                 .setTitle('🟢 Role Created')
                 .setColor('#00FF00')
+                .setThumbnail(logHandlersIcons.badgeIcon)
                 .addFields(
                     { name: 'Role', value: `${role.name} (${role.id})`, inline: true },
                     { name: 'Color', value: role.hexColor, inline: true },
                 )
+                .setFooter({ text: 'Logs System', iconURL: logHandlersIcons.footerIcon })
                 .setTimestamp();
 
             logChannel.send({ embeds: [embed] });
